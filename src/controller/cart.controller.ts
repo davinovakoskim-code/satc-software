@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, HttpCode, Param, Patch, Post } from '@nestjs/common'
-import { CartService } from './service/CartService'
-import { CartItem } from './model/CartItem'
+import { CartService } from '../service/CartService'
+import { CartItem } from '../model/CartItem'
 
 class AddItemDto {
   productId: string
