@@ -3,6 +3,8 @@ import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { ProductService } from './service/ProductService'
 import { ProductResolver } from './app.resolver'
+import { CartController } from './cart.controller'
+import { CartService } from './service/CartService'
 import { GraphQLModule } from '@nestjs/graphql'
 import { ApolloDriverConfig, ApolloDriver } from '@nestjs/apollo'
 import { join } from 'path'
@@ -15,7 +17,7 @@ import { join } from 'path'
       sortSchema: true,
     }),
   ],
-  controllers: [AppController],
-  providers: [AppService, ProductService, ProductResolver],
+  controllers: [AppController, CartController],
+  providers: [AppService, ProductService, ProductResolver, CartService],
 })
 export class AppModule {}
