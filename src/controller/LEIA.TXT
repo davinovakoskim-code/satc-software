@@ -1,0 +1,8 @@
+npm install class-validator class-transformer
+
+@IsNumber()  Garante que a quantidade seja um número
+  @IsPositive()  Garante que a quantidade seja um número positivo
+
+  @IsNotEmpty()  Garante que o ID do produto não seja vazio
+
+  import { IsNotEmpty, IsNumber, IsPositive } from 'class-validator';  Importe os decoradores

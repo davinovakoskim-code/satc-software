@@ -1,14 +1,21 @@
 import { Body, Controller, Delete, HttpCode, Param, Patch, Post } from '@nestjs/common'
 import { CartService } from '../service/CartService'
 import { CartItem } from '../model/CartItem'
+import { IsNotEmpty, IsNumber, IsPositive } from 'class-validator'; 
 
 class AddItemDto {
-  productId: string
-  quantity: number
+  @IsNotEmpty() 
+  productId: string;
+
+  @IsNumber() 
+  @IsPositive() 
+  quantity: number;
 }
 
 class UpdateItemDto {
-  quantity: number
+  @IsNumber()
+  @IsPositive()
+  quantity: number;
 }
 
 @Controller('cart')
