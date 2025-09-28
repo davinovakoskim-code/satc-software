@@ -3,7 +3,8 @@ import { Product } from '../model/Product'
 import { ProductGql } from '../model/ProductGql'
 import { ProductListResponse } from '../model/ProductListResponse'
 import { ProductRepository } from '../repository/product.repository'
-import { CacheService } from 'src/cache/cache.service'
+import { CacheService } from '../cache/cache.service' 
+import { ProductListItem } from '../model/ProductListItem' 
 
 const DEFAULT_PAGE = 1
 const DEFAULT_LIMIT = 10
@@ -13,13 +14,17 @@ const MAX_LIMIT = 50
 export class ProductService {
   constructor(
     private readonly productRepository: ProductRepository,
-    private readonly cacheService: CacheService, //Injetar CacheService
+    private readonly cacheService: CacheService,
   ) {}
 
-  getProducts(page?: number, limit?: number): ProductListResponse {
+ 
+  getProducts(page?: number, limit?: number): ProductListResponse<ProductListItem> { // 👈 Tipagem corrigida
     const safeLimit = this.normalizeLimit(limit)
     const safePage = this.normalizePage(page)
-    const { items, totalItems } = this.productRepository.findAll(safePage, safeLimit)
+    
+   
+    const { items, totalItems } = this.productRepository.findAllOptimized(safePage, safeLimit) 
+    
     const totalPages = Math.max(1, Math.ceil(totalItems / safeLimit))
 
     return {
@@ -33,9 +38,8 @@ export class ProductService {
     }
   }
 
-  async findProductById(id: string): Promise<Product> { 
+  async findProductById(id: string): Promise<Product> {
     const cacheKey = `product:${id}`
-    const TTL_SECONDS = 3600 
 
     
     const cachedProduct = await this.cacheService.get<Product>(cacheKey)
@@ -44,26 +48,19 @@ export class ProductService {
       return cachedProduct
     }
 
-    
     console.log(`[Cache-Miss] Produto ${id} não encontrado. Buscando no DB...`)
-    
-    
-    const product = this.productRepository.findById(id) 
+    const product = this.productRepository.findById(id)
 
     if (!product) {
       throw new NotFoundException('Produto não encontrado')
     }
-    
-    
-    await this.cacheService.set(cacheKey, product, TTL_SECONDS) 
 
+    await this.cacheService.set(cacheKey, product, 3600)
     return product
   }
 
-  async findProductGqlById(id: string): Promise<ProductGql> { 
-    //O findProductById agora lida com o cache
-    const product = await this.findProductById(id) 
-    return product as ProductGql
+  async findProductGqlById(id: string): Promise<ProductGql> {
+    return (await this.findProductById(id)) as ProductGql
   }
 
   private normalizeLimit(limit?: number): number {
@@ -84,3 +81,5 @@ export class ProductService {
     return Math.max(1, floored)
   }
 }
+
+

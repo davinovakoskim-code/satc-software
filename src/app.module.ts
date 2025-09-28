@@ -45,10 +45,10 @@ import { ProductService } from './service/ProductService'
     CartService,
     ProductRepository,
     CartRepository,
-    CacheService, //Adiciona o novo serviço de cache
+    CacheService, 
   ],
   exports: [
-    CacheService, //Exporta o serviço para que o ProductService possa injetá-lo
+    CacheService, 
   ],
 })
 export class AppModule {}
