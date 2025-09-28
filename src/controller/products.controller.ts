@@ -17,7 +17,8 @@ export class ProductsController {
   }
 
   @Get(':id')
-  getProductById(@Param('id') id: string): Product {
-    return this.productService.findProductById(id)
+  async getProductById(@Param('id') id: string): Promise<Product> {
+    
+    return await this.productService.findProductById(id) 
   }
 }

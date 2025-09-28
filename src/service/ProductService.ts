@@ -3,6 +3,7 @@ import { Product } from '../model/Product'
 import { ProductGql } from '../model/ProductGql'
 import { ProductListResponse } from '../model/ProductListResponse'
 import { ProductRepository } from '../repository/product.repository'
+import { CacheService } from 'src/cache/cache.service'
 
 const DEFAULT_PAGE = 1
 const DEFAULT_LIMIT = 10
@@ -10,7 +11,10 @@ const MAX_LIMIT = 50
 
 @Injectable()
 export class ProductService {
-  constructor(private readonly productRepository: ProductRepository) {}
+  constructor(
+    private readonly productRepository: ProductRepository,
+    private readonly cacheService: CacheService, //Injetar CacheService
+  ) {}
 
   getProducts(page?: number, limit?: number): ProductListResponse {
     const safeLimit = this.normalizeLimit(limit)
@@ -29,18 +33,37 @@ export class ProductService {
     }
   }
 
-  findProductById(id: string): Product {
-    const product = this.productRepository.findById(id)
+  async findProductById(id: string): Promise<Product> { 
+    const cacheKey = `product:${id}`
+    const TTL_SECONDS = 3600 
+
+    
+    const cachedProduct = await this.cacheService.get<Product>(cacheKey)
+    if (cachedProduct) {
+      console.log(`[Cache-Hit] Produto ${id} encontrado no cache!`)
+      return cachedProduct
+    }
+
+    
+    console.log(`[Cache-Miss] Produto ${id} não encontrado. Buscando no DB...`)
+    
+    
+    const product = this.productRepository.findById(id) 
 
     if (!product) {
       throw new NotFoundException('Produto não encontrado')
     }
+    
+    
+    await this.cacheService.set(cacheKey, product, TTL_SECONDS) 
 
     return product
   }
 
-  findProductGqlById(id: string): ProductGql {
-    return this.findProductById(id) as ProductGql
+  async findProductGqlById(id: string): Promise<ProductGql> { 
+    //O findProductById agora lida com o cache
+    const product = await this.findProductById(id) 
+    return product as ProductGql
   }
 
   private normalizeLimit(limit?: number): number {
