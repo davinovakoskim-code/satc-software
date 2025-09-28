@@ -1,40 +1,64 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { CartItem } from '../model/CartItem'
+import { CartSummary } from '../model/CartSummary'
+import { CartRepository } from '../repository/cart.repository'
 import { ProductService } from './ProductService'
+
+const ARTIFICIAL_DELAY_MS = 750
 
 @Injectable()
 export class CartService {
-  private readonly items: Map<string, CartItem> = new Map()
+  constructor(
+    private readonly productService: ProductService,
+    private readonly cartRepository: CartRepository,
+  ) {}
 
-  constructor(private readonly productService: ProductService) {}
+  async addItem(productId: string, quantity: number): Promise<CartItem> {
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      throw new BadRequestException('A quantidade deve ser um número inteiro positivo')
+    }
 
-  addItem(productId: string, quantity: number): CartItem {
     this.productService.findProductById(productId)
-    const existing = this.items.get(productId)
+    await this.simulateProcessingDelay()
+
+    const existing = this.cartRepository.findByProductId(productId)
     const newQuantity = (existing?.quantity ?? 0) + quantity
     const item: CartItem = { productId, quantity: newQuantity }
-    this.items.set(productId, item)
-    return item
+
+    return this.cartRepository.upsert(item)
   }
 
   updateItem(productId: string, quantity: number): CartItem {
-    const existing = this.items.get(productId)
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      throw new BadRequestException('A quantidade deve ser um número inteiro positivo')
+    }
+
+    const existing = this.cartRepository.findByProductId(productId)
     if (!existing) {
       throw new NotFoundException('Item não encontrado no carrinho')
     }
+
     const item: CartItem = { productId, quantity }
-    this.items.set(productId, item)
-    return item
+    return this.cartRepository.upsert(item)
   }
 
   removeItem(productId: string): void {
-    const existed = this.items.delete(productId)
-    if (!existed) {
+    const removed = this.cartRepository.remove(productId)
+    if (!removed) {
       throw new NotFoundException('Item não encontrado no carrinho')
     }
   }
 
-  getItems(): CartItem[] {
-    return Array.from(this.items.values())
+  getSummary(): CartSummary {
+    const items = this.cartRepository.list()
+    return {
+      items,
+      totalQuantity: this.cartRepository.countTotalQuantity(),
+      totalItems: this.cartRepository.countDistinctItems(),
+    }
+  }
+
+  private simulateProcessingDelay(): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ARTIFICIAL_DELAY_MS))
   }
 }

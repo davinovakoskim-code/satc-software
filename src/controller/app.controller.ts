@@ -1,22 +1,12 @@
-import { Controller, Get, Param } from '@nestjs/common'
+import { Controller, Get } from '@nestjs/common'
 import { AppService } from '../service/app.service'
-import { Product } from '../model/Product'
-import { ProductService } from '../service/ProductService'
 
 @Controller()
 export class AppController {
-  constructor(
-    private readonly appService: AppService,
-    private readonly productService: ProductService,
-  ) {}
+  constructor(private readonly appService: AppService) {}
 
   @Get()
   getHealth(): string {
     return this.appService.getHealth()
-  }
-
-  @Get('product/:id')
-  getProductById(@Param('id') id: string): Product {
-    return this.productService.findProductById(id)
   }
 }
