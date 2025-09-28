@@ -1,13 +1,10 @@
-import { Body, Controller, Delete, HttpCode, Param, Patch, Post } from '@nestjs/common'
-import { CartService } from '../service/CartService'
+import { Body, Controller, Get, Post } from '@nestjs/common'
 import { CartItem } from '../model/CartItem'
+import { CartSummary } from '../model/CartSummary'
+import { CartService } from '../service/CartService'
 
-class AddItemDto {
+class AddToCartDto {
   productId: string
-  quantity: number
-}
-
-class UpdateItemDto {
   quantity: number
 }
 
@@ -15,19 +12,13 @@ class UpdateItemDto {
 export class CartController {
   constructor(private readonly cartService: CartService) {}
 
-  @Post('items')
-  addItem(@Body() dto: AddItemDto): CartItem {
+  @Post('add')
+  async addItem(@Body() dto: AddToCartDto): Promise<CartItem> {
     return this.cartService.addItem(dto.productId, dto.quantity)
   }
 
-  @Patch('items/:productId')
-  updateItem(@Param('productId') productId: string, @Body() dto: UpdateItemDto): CartItem {
-    return this.cartService.updateItem(productId, dto.quantity)
-  }
-
-  @Delete('items/:productId')
-  @HttpCode(204)
-  removeItem(@Param('productId') productId: string): void {
-    this.cartService.removeItem(productId)
+  @Get()
+  getCartSummary(): CartSummary {
+    return this.cartService.getSummary()
   }
 }

@@ -1,0 +1,27 @@
+config:
+  target: "http://localhost:3000"
+  phases:
+    - duration: 60
+      arrivalRate: 5
+      name: Warm-up
+    - duration: 120
+      arrivalRate: 10
+      rampTo: 25
+      name: Ramp-up
+  defaults:
+    headers:
+      Accept: application/json
+scenarios:
+  - name: List products
+    flow:
+      - get:
+          url: "/products"
+          query:
+            page: 1
+            limit: 10
+          capture:
+            - json: "$.pagination.totalItems"
+              as: totalItems
+    ensure:
+      - "@http.response.statusCode == 200"
+      - "@capture.totalItems >= 1"
