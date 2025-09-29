@@ -1,9 +1,10 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Injectable, NotFoundException, RequestTimeoutException } from '@nestjs/common'
 import { CartItem } from '../model/CartItem'
 import { CartSummary } from '../model/CartSummary'
 import { CartRepository } from '../repository/cart.repository'
 import { ProductService } from './ProductService'
 
+// Atraso artificial em ms
 const ARTIFICIAL_DELAY_MS = 750
 
 @Injectable()
@@ -18,14 +19,30 @@ export class CartService {
       throw new BadRequestException('A quantidade deve ser um número inteiro positivo')
     }
 
-    this.productService.findProductById(productId)
-    await this.simulateProcessingDelay()
+    // Definição do tempo limite para a operação
+    // O atraso atual é de 750ms. Um timeout de 1000ms permitirá que a operação conclua.
+    // Para testar o erro, mude este valor para algo MENOR que 750, como 500.
+    const TIMEOUT_DURATION_MS = 500
 
-    const existing = this.cartRepository.findByProductId(productId)
-    const newQuantity = (existing?.quantity ?? 0) + quantity
-    const item: CartItem = { productId, quantity: newQuantity }
+    const processingPromise = (async (): Promise<CartItem> => {
+      await this.productService.findProductById(productId)
 
-    return this.cartRepository.upsert(item)
+      await this.simulateProcessingDelay()
+
+      const existing = this.cartRepository.findByProductId(productId)
+      const newQuantity = (existing?.quantity ?? 0) + quantity
+      const item: CartItem = { productId, quantity: newQuantity }
+
+      return this.cartRepository.upsert(item)
+    })()
+
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        reject(new RequestTimeoutException('A operação excedeu o tempo limite.'))
+      }, TIMEOUT_DURATION_MS)
+    })
+
+    return Promise.race([processingPromise, timeoutPromise])
   }
 
   updateItem(productId: string, quantity: number): CartItem {

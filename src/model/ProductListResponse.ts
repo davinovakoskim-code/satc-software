@@ -1,7 +1,5 @@
-import { Product } from './Product'
-
-export interface ProductListResponse {
-  data: Product[]
+export interface ProductListResponse<T> {
+  data: T[]
   pagination: {
     page: number
     limit: number
