@@ -1,0 +1,24 @@
+config:
+  target: "http://localhost:3000"
+  phases:
+    - duration: 10
+      arrivalRate: 1
+      name: Warm cache
+    - duration: 40
+      arrivalRate: 10
+      rampTo: 30
+      name: Cached load
+  defaults:
+    headers:
+      Accept: application/json
+scenarios:
+  - name: Produto em cache
+    flow:
+      - get:
+          url: "/products/1"
+          capture:
+            - json: "$.id"
+              as: productId
+    ensure:
+      - "@http.response.statusCode == 200"
+      - "@capture.productId == '1'"
